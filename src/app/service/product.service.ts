@@ -5,6 +5,9 @@ import {Observable} from 'rxjs';
 import {Product} from '../common/product';
 import {map} from 'rxjs/operators';
 import {GetProductResponse} from '../common/product-response';
+import {Router} from '@angular/router';
+import {ProductCategory} from '../common/product-category';
+import {GetProductCategoryResponse} from '../common/product-category-response';
 
 @Injectable({
   providedIn: 'root'
@@ -14,13 +17,31 @@ export class ProductService {
   public host: string = environment.host;
   private pageSize: number;
 
-  constructor(private httpClient: HttpClient) {
+  constructor(private httpClient: HttpClient,
+              private router: Router) {
   }
 
-  getProductList(): Observable<Product[]> {
+  getProductList(categoryId: number): Observable<Product[]> {
     this.pageSize = 100;
-    return this.httpClient.get<GetProductResponse>(`${this.host}/api/products?size=${this.pageSize}`).pipe(
+    const searchUrl = `${this.host}/api/products/search/findByCategoryId?id=${categoryId}&size=${this.pageSize}`;
+    return this.pullProducts(searchUrl);
+  }
+
+  private pullProducts(searchUrl: string): Observable<Product[]> {
+    return this.httpClient.get<GetProductResponse>(searchUrl).pipe(
       map(response => response._embedded.products)
+    );
+  }
+
+  searchProducts(keyWord: string): Observable<Product[]> {
+    const searchUrl = `${this.host}/api/products/search/findByNameContaining?name=${keyWord}`;
+    return this.pullProducts(searchUrl);
+  }
+
+  getProductCategories(): Observable<ProductCategory[]> {
+    const searchUrl = `${this.host}/api/product-category`;
+    return this.httpClient.get<GetProductCategoryResponse>(searchUrl).pipe(
+      map(response => response._embedded.productCategory)
     );
   }
 }
